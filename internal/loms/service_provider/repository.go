@@ -2,9 +2,11 @@ package service_provider
 
 import (
 	"context"
+	"database/sql"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"loms/internal/loms/db"
 	"loms/internal/loms/logger"
+	"loms/internal/loms/migrator"
 	"loms/internal/loms/repository/order_storage"
 	"loms/internal/loms/repository/stock_storage"
 )
@@ -13,6 +15,20 @@ type repository struct {
 	dbClient     db.Client
 	orderStorage order_storage.Storage
 	stockStorage stock_storage.Storage
+	dbMigrator   migrator.Migrator
+}
+
+func (s *ServiceProvider) GetDBMigrator(ctx context.Context) migrator.Migrator {
+	if s.repository.dbMigrator == nil {
+		sqlDB, err := sql.Open("pgx", s.cfg.MasterDBURL)
+		if err != nil {
+			logger.Fatalf(ctx, "failed to open db migrator: %w", err)
+		}
+
+		s.repository.dbMigrator = migrator.NewMigrator(sqlDB)
+	}
+
+	return s.repository.dbMigrator
 }
 
 func (s *ServiceProvider) GetDBClient(ctx context.Context) db.Client {

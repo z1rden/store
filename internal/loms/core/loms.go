@@ -44,6 +44,17 @@ func (s *service) Run() error {
 	closer := s.serviceProvider.GetCloser(s.ctx)
 	defer closer.Wait()
 
+	dbMigrator := s.serviceProvider.GetDBMigrator(s.ctx)
+	if err := dbMigrator.MigrateUp(); err != nil {
+		logger.Fatalf(s.ctx, "failed to migrate db migrations: %v", err)
+		closer.CloseAll()
+	}
+
+	if err := dbMigrator.Close(); err != nil {
+		logger.Fatalf(s.ctx, "failed to close db migrations: %v", err)
+		closer.CloseAll()
+	}
+
 	orderApi := s.serviceProvider.GetOrderAPI(s.ctx)
 	stockApi := s.serviceProvider.GetStockAPI(s.ctx)
 
