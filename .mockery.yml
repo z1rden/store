@@ -1,0 +1,37 @@
+template: testify
+packages:
+  cart/internal/cart/repository/cart_storage:
+    config:
+      dir: ./internal/cart/repository/cart_storage/mocks
+      filename: storage_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Storage:
+
+  cart/internal/cart/client/product_service:
+    config:
+      dir: ./internal/cart/client/product_service/mocks
+      filename: client_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Client:
+
+  cart/internal/cart/service/cart_service:
+    config:
+      dir: ./internal/cart/service/cart_service/mocks
+      filename: service_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Service:
+
+  cart/internal/cart/client/loms_service:
+    config:
+      dir: ./internal/cart/client/loms_service/mocks
+      filename: client_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Client:
