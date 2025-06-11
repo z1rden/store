@@ -1,0 +1,5 @@
+app_name: "loms-service"
+http_port: "8081"
+grpc_port: "8082"
+master_db_url: "postgres://postgres:postgres@localhost:54321/loms?sslmode=disable"
+sync_db_url: "postgres://postgres:postgres@localhost:54322/loms?sslmode=disable"
