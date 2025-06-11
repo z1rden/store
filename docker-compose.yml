@@ -1,0 +1,81 @@
+services:
+  loms-master-db:
+    image: bitnami/postgresql:latest
+    ports:
+      - "54321:54321"
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=loms
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=replicator
+      - POSTGRESQL_REPLICATION_PASSWORD=test
+      - POSTGRESQL_SYNCHRONOUS_COMMIT_MODE=on
+      - POSTGRESQL_NUM_SYNCHRONOUS_REPLICAS=1
+      - POSTGRESQL_PGAUDIT_LOG=READ,WRITE
+      - POSTGRESQL_LOG_HOSTNAME=true
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+
+  loms-sync-db:
+    image: bitnami/postgresql:latest
+    ports:
+      - "54322:54322"
+    depends_on:
+      - loms-master-db
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
+      - POSTGRESQL_DATABASE=loms
+      - POSTGRESQL_MASTER_HOST=loms-master-db
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=replicator
+      - POSTGRESQL_REPLICATION_PASSWORD=test
+      - POSTGRESQL_PGAUDIT_LOG=READ,WRITE
+      - POSTGRESQL_LOG_HOSTNAME=true
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+
+  loms-migrate-db:
+    image: golang:latest
+    depends_on:
+       loms-master-db:
+         condition: service_healthy
+    environment:
+       - GOOSE_DRIVER=postgres
+       - GOOSE_DBSTRING=user=postgres password=postgres dbname=loms host=loms-master-db port=5432 sslmode=disable
+    volumes:
+       - ./loms/migrations:/migrations
+    command: "sh -c 'go install github.com/pressly/goose/v3/cmd/goose@latest && goose -dir /migrations up'"
+
+  cart:
+    image: cart
+    build: ./cart/
+    ports:
+      - "8080:8080"
+    environment:
+      LOMS_SERVICE_GRPC_HOST: "loms:8082"
+
+  loms:
+    image: loms
+    build: ./loms/
+    ports:
+      - "8081:8081"
+      - "8082:8082"
+    environment:
+      MASTER_DB_URL: "postgres://postgres:postgres@loms-master-db:5432/loms?sslmode=disable"
+      SYNC_DB_URL: "postgres://postgres:postgres@loms-sync-db:5432/loms?sslmode=disable"
+    depends_on:
+      loms-master-db:
+        condition: service_healthy
+      loms-sync-db:
+        condition: service_healthy
+      loms-migrate-db:
+        condition: service_completed_successfully
