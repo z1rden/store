@@ -22,19 +22,21 @@ func NewMigrator(db *sql.DB) Migrator {
 }
 
 func (m *migrator) MigrateUp() error {
-	err := goose.SetDialect("postgres")
-	if err != nil {
+	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("migrator: failed to set dialect: %w", err)
 	}
 
-	err = goose.Up(m.db, "migrations")
-	if err != nil {
-		return fmt.Errorf("migrator: failed to up migrations: %w", err)
+	if err := goose.Up(m.db, "./migrations"); err != nil {
+		return fmt.Errorf("migrator: failed to migrate up: %w", err)
 	}
 
 	return nil
 }
 
 func (m *migrator) Close() error {
-	return m.db.Close()
+	if err := m.db.Close(); err != nil {
+		return fmt.Errorf("migrator: failed to close db: %w", err)
+	}
+
+	return nil
 }
