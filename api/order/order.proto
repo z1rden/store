@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package order;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "buf/validate/validate.proto";
+
+option go_package = "/pkg/api/order";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  // Базовые метаданные API
+  info: {
+    title: "Order API";
+    version: "1.0.0";
+  };
+  // Схемы подключения, позволяющие вызовы API через HTTP и HTTPS.
+  schemes: HTTP;
+  schemes: HTTPS;
+  consumes: "application/json"; // API принимает только application/json
+  produces: "application/json"; // API возвращает только application/json
+  // Настройка аутентификации
+  security_definitions: {
+    security: {
+      key: "x-auth"; // Идентификатор схемы (используется для пометки защищенных методов)
+      value: {
+        type: TYPE_API_KEY; // Тип
+        in: IN_HEADER; // Расположение в HTTP-заголовке
+        name: "authorization"; // Имя заголовка
+      }
+    }
+  }
+};
+
+service Order {
+  rpc Create(OrderCreateRequest) returns (OrderCreateResponse) {
+    option(google.api.http) = {
+      post: "/order/create";
+      body: "*";
+    };
+  }
+
+  rpc Info(OrderInfoRequest) returns (OrderInfoResponse) {
+    option(google.api.http) = {
+      get: "/order/info/{order_id}";
+    };
+  }
+
+  rpc Cancel(OrderCancelRequest) returns (google.protobuf.Empty) {
+    option(google.api.http) = {
+      post: "/order/cancel";
+      body: "*"
+    };
+  }
+
+  rpc Pay(OrderPayRequest) returns (google.protobuf.Empty) {
+    option(google.api.http) = {
+      post: "/order/pay";
+      body: "*"
+    };
+  }
+}
+
+message OrderCreateRequest {
+  message Item {
+    int64 sku = 1 [json_name = "sku", (buf.validate.field).int64.gt = 0];
+    uint64 count = 2 [json_name = "count", (buf.validate.field).uint64.gt = 0];
+  }
+  int64 user = 1 [json_name = "user", (buf.validate.field).int64.gt = 0];
+  repeated Item items = 2 [json_name = "items", (buf.validate.field).repeated.min_items = 1];
+}
+
+message OrderCreateResponse {
+  int64 order_id = 1 [json_name = "order_id"];
+}
+
+message OrderInfoRequest {
+  int64 order_id = 1 [json_name = "order_id", (buf.validate.field).int64.gt = 0];
+}
+
+message OrderInfoResponse {
+  message Item {
+    int64 sku = 1 [json_name = "sku"];
+    uint64 count = 2 [json_name = "count"];
+  }
+
+  string status = 1 [json_name = "status"];
+  int64 user = 2 [json_name = "user"];
+  repeated Item items = 3 [json_name = "items"];
+}
+
+message OrderCancelRequest {
+  int64 order_id = 1 [json_name = "order_id", (buf.validate.field).int64.gt = 0];
+}
+
+message OrderPayRequest {
+  int64 order_id = 1 [json_name = "order_id", (buf.validate.field).int64.gt = 0];
+}
+
