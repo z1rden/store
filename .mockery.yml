@@ -1,0 +1,19 @@
+template: testify
+packages:
+  loms/internal/loms/repository/order_storage:
+    config:
+      dir: ./internal/loms/repository/order_storage/mocks
+      filename: storage_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Storage:
+
+  loms/internal/loms/repository/stock_storage:
+    config:
+      dir: ./internal/loms/repository/stock_storage/mocks
+      filename: storage_mock.go
+      pkgname: mocks
+      structname: "{{.InterfaceName}}Mock"
+    interfaces:
+      Storage:
