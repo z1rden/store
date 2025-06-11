@@ -17,5 +17,6 @@ COPY --from=builder /loms/bin/loms /loms
 COPY --from=builder /loms/config/ /config/
 COPY --from=builder /loms/pkg/swagger /pkg/swagger
 COPY --from=builder /loms/pkg/swagger-ui /pkg/swagger-ui
+COPY --from=builder /loms/migrations /migrations
 
 CMD [ "/loms" ]
