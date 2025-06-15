@@ -5,6 +5,7 @@ import (
 	"loms/internal/loms/config"
 	"loms/internal/loms/grpc_server"
 	"loms/internal/loms/http_server"
+	"loms/internal/loms/kafka_admin"
 	"loms/internal/loms/logger"
 	"loms/internal/loms/service_provider"
 )
@@ -43,6 +44,18 @@ func (s *service) Run() error {
 
 	closer := s.serviceProvider.GetCloser(s.ctx)
 	defer closer.Wait()
+
+	kafkaAdmin := s.serviceProvider.GetKafkaAdmin(s.ctx)
+	if err := kafkaAdmin.CreateTopic(s.cfg.Kafka.Topic.Name,
+		kafka_admin.WithNumPartitions(int32(s.cfg.Kafka.Topic.NumPartitions)),
+		kafka_admin.WithReplicationFactor(int16(s.cfg.Kafka.Topic.ReplicationFactor)),
+		kafka_admin.WithRetentionMSMinute(s.cfg.Kafka.Topic.RetentionsMS)); err != nil {
+
+		return err
+	}
+	if err := kafkaAdmin.Close(); err != nil {
+		logger.Fatalf(s.ctx, "Failed to close kafka admin: %v", err)
+	}
 
 	orderApi := s.serviceProvider.GetOrderAPI(s.ctx)
 	stockApi := s.serviceProvider.GetStockAPI(s.ctx)
@@ -83,6 +96,10 @@ func (s *service) Run() error {
 	}()
 
 	closer.Add(logger.Close)
+
+	kafkaService := s.serviceProvider.GetKafkaService(s.ctx)
+	kafkaService.SendMessages(s.ctx)
+	closer.Add(kafkaService.StopSendMessages)
 
 	return nil
 }

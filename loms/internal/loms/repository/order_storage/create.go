@@ -39,6 +39,11 @@ func (s *storage) Create(ctx context.Context, userID int64, items []*Item) (int6
 			}
 		}
 
+		err = s.insertOrderStatusChangedKafkaOutbox(ctx, tx, orderID, model.OrderStatusNew)
+		if err != nil {
+			return fmt.Errorf("failed to insert to kafka outbox record: %w", err)
+		}
+
 		return nil
 	})
 	if err != nil {

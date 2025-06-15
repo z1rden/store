@@ -12,6 +12,7 @@ type ServiceProvider struct {
 	closer     closer.Closer
 	api        api
 	cfg        *config.Config
+	kafka      kafka
 }
 
 var serviceProvider *ServiceProvider
