@@ -11,11 +11,54 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type MessageStatusType string
+
+const (
+	MessageStatusTypeNew    MessageStatusType = "new"
+	MessageStatusTypeSent   MessageStatusType = "sent"
+	MessageStatusTypeFailed MessageStatusType = "failed"
+)
+
+func (e *MessageStatusType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MessageStatusType(s)
+	case string:
+		*e = MessageStatusType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MessageStatusType: %T", src)
+	}
+	return nil
+}
+
+type NullMessageStatusType struct {
+	MessageStatusType MessageStatusType
+	Valid             bool // Valid is true if MessageStatusType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMessageStatusType) Scan(value interface{}) error {
+	if value == nil {
+		ns.MessageStatusType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MessageStatusType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMessageStatusType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MessageStatusType), nil
+}
+
 type OrderStatusType string
 
 const (
 	OrderStatusTypeNew             OrderStatusType = "new"
-	OrderStatusTypeAwaytingPayment OrderStatusType = "awayting_payment"
+	OrderStatusTypeAwaitingPayment OrderStatusType = "awaiting_payment"
 	OrderStatusTypePayed           OrderStatusType = "payed"
 	OrderStatusTypeCancelled       OrderStatusType = "cancelled"
 	OrderStatusTypeFailed          OrderStatusType = "failed"
@@ -54,6 +97,18 @@ func (ns NullOrderStatusType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.OrderStatusType), nil
+}
+
+type KafkaOutbox struct {
+	MessageID  pgtype.UUID
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
+	Status     NullMessageStatusType
+	Error      pgtype.Text
+	Event      pgtype.Text
+	EntityType pgtype.Text
+	EntityID   pgtype.Text
+	Data       pgtype.Text
 }
 
 type Order struct {

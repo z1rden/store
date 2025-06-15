@@ -1,5 +1,17 @@
-app_name: "loms-service"
+app_name: "loms"
 http_port: "8081"
 grpc_port: "8082"
 master_db_url: "postgres://postgres:postgres@localhost:54321/loms?sslmode=disable"
 sync_db_url: "postgres://postgres:postgres@localhost:54322/loms?sslmode=disable"
+kafka:
+    addr: "localhost:9092"
+    topic:
+      name: "loms.order-events"
+      num_partitions: 2
+      replication_factor: 1
+      retention_ms: 1
+    producer:
+      required_acks: -1
+      max_open_requests: 1
+      max_retries: 5
+      retry_backoff: 10

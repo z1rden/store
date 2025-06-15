@@ -18,3 +18,13 @@ sql:
         package: "sqlc"
         out: "./internal/loms/repository/order_storage/sqlc"
         sql_package: "pgx/v5"
+
+  - engine: "postgresql"
+    schema: "./migrations"
+    queries: "./internal/loms/repository/kafka_storage/query.sql"
+    gen:
+      go:
+        package: "sqlc"
+        out: "./internal/loms/repository/kafka_storage/sqlc"
+        sql_package: "pgx/v5"
+

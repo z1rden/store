@@ -5,6 +5,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"loms/internal/loms/db"
 	"loms/internal/loms/logger"
+	"loms/internal/loms/repository/kafka_storage"
 	"loms/internal/loms/repository/order_storage"
 	"loms/internal/loms/repository/stock_storage"
 )
@@ -13,6 +14,7 @@ type repository struct {
 	dbClient     db.Client
 	orderStorage order_storage.Storage
 	stockStorage stock_storage.Storage
+	kafkaStorage kafka_storage.Storage
 }
 
 func (s *ServiceProvider) GetDBClient(ctx context.Context) db.Client {
@@ -43,4 +45,14 @@ func (s *ServiceProvider) GetStockStorage(ctx context.Context) stock_storage.Sto
 	}
 
 	return s.repository.stockStorage
+}
+
+func (s *ServiceProvider) GetKafkaStorage(ctx context.Context) kafka_storage.Storage {
+	if s.repository.kafkaStorage == nil {
+		s.repository.kafkaStorage = kafka_storage.NewStorage(
+			ctx,
+			s.GetDBClient(ctx),
+		)
+	}
+	return s.repository.kafkaStorage
 }
